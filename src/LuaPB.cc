@@ -11,7 +11,11 @@
 #include <google/protobuf/compiler/importer.h>
 
 using namespace google::protobuf;
-
+static void luaL_setmetatable(lua_State *L, const char *tname)
+{
+		luaL_getmetatable(L, tname);
+			lua_setmetatable(L, -2);
+}
 static int push_message(lua_State* L,
 						Message* message,
 						bool del)
@@ -273,17 +277,11 @@ static int pb_repeated_set(lua_State* L)
 
 static ProtoImporter * pb_get_importer(lua_State *L){
 
-	luaObject *mmdb = luaL_checkudata(L, 1, PB_IMPORTER_MESSAGE);
-	return mmdb->importer;
+	luaObject *mmdb = (luaObject*)luaL_checkudata(L, 1, PB_IMPORTER_MESSAGE);
+	return (mmdb->importer);
 }
 
 ///////////////////////////////////////////////////////////
-static int pb_import(lua_State* L)
-{
-	const char* filename = luaL_checkstring(L, 1);
-	sProtoImporter.Import(filename);
-	return 0;
-}
 
 static int pb_new(lua_State* L)
 {
@@ -494,11 +492,11 @@ static int luapb_open(lua_State *L)
 {
 	const char *filename = luaL_checkstring(L, 1);
 
-	luaObject* wrapper =  static_cast<luaObject *> lua_newuserdata( L, sizeof(luaObject) );
+	luaObject* wrapper = (luaObject*) lua_newuserdata( L, sizeof(luaObject) );
 
   wrapper->importer = new ProtoImporter;
 	luaL_setmetatable(L, PB_IMPORTER_MESSAGE);
-  wrapper->importer.Import(filename);
+  wrapper->importer->Import(filename);
 
   return 1;
 }
@@ -507,7 +505,6 @@ static const struct luaL_reg lib[] =
 {
 	{"new", pb_new},
   {"open", luapb_open},
-	{"import", pb_import},
 	{"tostring", pb_tostring},
 	{"parseFromString", pb_parseFromString},
 	{"serializeToString", pb_serializeToString},

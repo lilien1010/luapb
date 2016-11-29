@@ -30,7 +30,7 @@ luaUserdataWrapper(const T& d) : importer(d) {}
 T importer;
 };
 
-typedef luaUserdataWrapper<CObject*> luaObject;
+typedef luaUserdataWrapper<ProtoImporter*> luaObject;
 
  
 
