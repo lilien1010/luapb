@@ -21,6 +21,17 @@ public:
 	google::protobuf::DynamicMessageFactory factory;
 };
 
-#define sProtoImporter Singleton<ProtoImporter>::instance()
+template<typename T>
+struct luaUserdataWrapper
+{
+luaUserdataWrapper() {}
+luaUserdataWrapper(const T& d) : importer(d) {}
+
+T importer;
+};
+
+typedef luaUserdataWrapper<CObject*> luaObject;
+
+ 
 
 #endif

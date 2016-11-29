@@ -18,10 +18,12 @@ typedef struct tagluarepeatedmsg
 }lua_repeated_msg;
 
 #define PB_MESSAGE "pb"
+#define PB_IMPORTER_MESSAGE "pb_importer"
 #define PB_MESSAGE_META "pb_meta"
 
 #define PB_REPEATED_MESSAGE_META "pb_repeated_meta"
 
 extern "C" int luaopen_luapb(lua_State* L);
+
 
 #endif

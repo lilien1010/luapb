@@ -12,13 +12,13 @@
 
 using namespace google::protobuf;
 
-static int push_message(lua_State* L, 
-						Message* message, 
+static int push_message(lua_State* L,
+						Message* message,
 						bool del)
 {
-	lua_pbmsg* tmp = 
+	lua_pbmsg* tmp =
 			static_cast<lua_pbmsg*>(lua_newuserdata(L, sizeof(lua_pbmsg)));
-	if (tmp == NULL) 
+	if (tmp == NULL)
 	{
 		return 0;
 	}
@@ -31,12 +31,12 @@ static int push_message(lua_State* L,
 	return 1;
 }
 
-static int push_repeated_msg(lua_State* L, 
-						Message* msg, 
+static int push_repeated_msg(lua_State* L,
+						Message* msg,
 						FieldDescriptor* field)
 {
 
-	lua_repeated_msg* repeated = 
+	lua_repeated_msg* repeated =
 		static_cast<lua_repeated_msg*>(lua_newuserdata(L, sizeof(lua_repeated_msg)));
 
 	if (!repeated) {
@@ -53,7 +53,7 @@ static int push_repeated_msg(lua_State* L,
 
 static int pb_repeated_add(lua_State* L)
 {
-	lua_repeated_msg* repeated = 
+	lua_repeated_msg* repeated =
 		(lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
     Message* message = repeated->msg;
@@ -128,7 +128,7 @@ static int pb_repeated_add(lua_State* L)
 
 static int pb_repeated_len(lua_State* L)
 {
-	lua_repeated_msg* repeated = 
+	lua_repeated_msg* repeated =
 		(lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
     Message* message = repeated->msg;
@@ -149,7 +149,7 @@ static int pb_repeated_len(lua_State* L)
 
 static int pb_repeated_get(lua_State* L)
 {
-	lua_repeated_msg* repeated = 
+	lua_repeated_msg* repeated =
 		(lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
     Message* message = repeated->msg;
@@ -210,7 +210,7 @@ static int pb_repeated_get(lua_State* L)
 
 static int pb_repeated_set(lua_State* L)
 {
-	lua_repeated_msg* repeated = 
+	lua_repeated_msg* repeated =
 		(lua_repeated_msg*)luaL_checkudata(L, 1, PB_REPEATED_MESSAGE_META);
 
     Message* message = repeated->msg;
@@ -271,6 +271,12 @@ static int pb_repeated_set(lua_State* L)
 	return 0;
 }
 
+static ProtoImporter * pb_get_importer(lua_State *L){
+
+	luaObject *mmdb = luaL_checkudata(L, 1, PB_IMPORTER_MESSAGE);
+	return mmdb->importer;
+}
+
 ///////////////////////////////////////////////////////////
 static int pb_import(lua_State* L)
 {
@@ -282,7 +288,7 @@ static int pb_import(lua_State* L)
 static int pb_new(lua_State* L)
 {
 	const char* type_name = luaL_checkstring(L, 1);
-	Message* message = sProtoImporter.createDynamicMessage(type_name);
+	Message* message =  pb_get_importer(L) ->createDynamicMessage(type_name);
 	if (!message)
 	{
 		fprintf(stderr, "pb_new error, result is typename(%s) not found!\n", type_name);
@@ -483,9 +489,24 @@ static int pb_serializeToString(lua_State* L)
 	return 1;
 }
 
+
+static int luapb_open(lua_State *L)
+{
+	const char *filename = luaL_checkstring(L, 1);
+
+	luaObject* wrapper =  static_cast<luaObject *> lua_newuserdata( L, sizeof(luaObject) );
+
+  wrapper->importer = new ProtoImporter;
+	luaL_setmetatable(L, PB_IMPORTER_MESSAGE);
+  wrapper->importer.Import(filename);
+
+  return 1;
+}
+
 static const struct luaL_reg lib[] =
 {
 	{"new", pb_new},
+  {"open", luapb_open},
 	{"import", pb_import},
 	{"tostring", pb_tostring},
 	{"parseFromString", pb_parseFromString},
@@ -509,9 +530,11 @@ static const struct luaL_reg repeatedlib[] = {
 	{NULL, NULL},
 };
 
+
+
 int luaopen_luapb(lua_State* L)
 {
-	luaL_newmetatable(L, PB_REPEATED_MESSAGE_META); 
+	luaL_newmetatable(L, PB_REPEATED_MESSAGE_META);
 	luaL_register(L, NULL, repeatedlib);
 
 	lua_pushstring(L, "__index");
@@ -528,5 +551,3 @@ int luaopen_luapb(lua_State* L)
 	luaL_register(L, PB_MESSAGE, lib);
 	return 1;
 }
-
-
